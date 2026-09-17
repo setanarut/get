@@ -2,6 +2,11 @@
 
 A multi-connection file downloader using parallel HTTP range requests.
 
+```sh
+get -p 4 https://example.com/file.tar.gz
+ ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  11% 1.79 MiB/s
+```
+
 - Fast: downloads a file using multiple connections
 - Resumable: keeps downloaded chunks and continues where it left off
 - Mirror-aware: can download from multiple URLs at once
@@ -16,24 +21,6 @@ go install github.com/setanarut/get/cmd/get@latest
 ```
 
 ## Usage
-
-```text
-Get, file download client.
-
-Usage:
-  get [flags] URL...
-
-Flags:
-  -h, --help                help for get
-  -o, --output string       output file to <filename>
-  -p, --procs int           the number of connections for a single URL (default 1)
-  -r, --referer string      identify as <referer>
-  -t, --timeout int         timeout of checking request in seconds (default 10)
-  -u, --user-agent string   identify as <agent>
-  -v, --version             version for get
-```
-
-### Examples
 
 Download a file with 4 connections:
 
@@ -57,9 +44,16 @@ URLs can also be passed through stdin, one per line.
 
 ## Resume
 
-If a download is interrupted, run the same command again. The downloaded
+If a download is interrupted (ctrl+c), run the same command again. The downloaded
 chunks are stored in a `_<filename>.partial` directory next to the output
 file and reused on the next run.
+
+> ./get https://example.com/file.tar.gz
+ ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  17% 1.77 MiB/s
+ ^C
+> ./get https://example.com/file.tar.gz
+ ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  21% 1.74 MiB/s
+ ^C
 
 Because chunks are stored by their byte offset, you can resume with a
 different `-p` value and the already downloaded data is still reused.

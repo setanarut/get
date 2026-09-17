@@ -14,6 +14,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// ░█
+const progressBarTemplate = `{{bar . " " "█" "█" "░" " "}} {{percent . "%.0f%%" | cyan}} {{speed . "%s/s" "?/s" | yellow}}`
+
 type assignTasksConfig struct {
 	Procs         int
 	ContentLength int64 // full download filesize
@@ -223,7 +226,7 @@ type parallelDownloadConfig struct {
 func parallelDownload(ctx context.Context, c *parallelDownloadConfig) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
-	bar := pb.Start64(c.ContentLength).SetWriter(stdout).Set(pb.Bytes, true)
+	bar := pb.ProgressBarTemplate(progressBarTemplate).Start64(c.ContentLength).SetWriter(stdout).Set(pb.Bytes, true)
 	defer bar.Finish()
 
 	// check file size already downloaded for resume
@@ -306,7 +309,7 @@ func bindFiles(c *DownloadConfig, partialDir string) error {
 	}
 	defer f.Close()
 
-	bar := pb.Start64(c.ContentLength).SetWriter(stdout)
+	bar := pb.ProgressBarTemplate(progressBarTemplate).Start64(c.ContentLength).SetWriter(stdout).Set(pb.Bytes, true)
 
 	copyFn := func(name string) error {
 		subfp, err := os.Open(name)

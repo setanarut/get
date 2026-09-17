@@ -1,19 +1,11 @@
 package get
 
-import "github.com/pkg/errors"
-
 type causer interface {
 	Cause() error
 }
 
 type ignore struct {
 	err error
-}
-
-func makeIgnoreErr() ignore {
-	return ignore{
-		err: errors.New("this is ignore message"),
-	}
 }
 
 // Error for options: version, usage

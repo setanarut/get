@@ -58,7 +58,10 @@ func (g *Get) Run(ctx context.Context, version string, args []string) error {
 }
 
 // newCommand builds the cobra command and binds all flags to g.
-// cobra adds the -h/--help and -v/--version flags automatically.
+// The -h/--help and -v/--version flags are added manually instead of
+// relying on the ones cobra adds automatically, so their usage text and
+// version output can be customized. When the flags are already defined,
+// cobra skips adding its own defaults.
 func (g *Get) newCommand(ctx context.Context, version string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get [flags] URL...",
@@ -86,6 +89,14 @@ Downloads are resumable and multiple mirror URLs can be used at once.`,
 	flags.IntVarP(&g.timeout, "timeout", "t", defaultTimeout, "Set timeout of checking request in seconds")
 	flags.StringVarP(&g.useragent, "user-agent", "u", "", "Identify as <agent>")
 	flags.StringVarP(&g.referer, "referer", "r", "", "Identify as <referer>")
+
+	// -h/--help and -v/--version are added manually; cobra still handles
+	// them, but we control the usage texts.
+	flags.BoolP("help", "h", false, "Help for get")
+	flags.BoolP("version", "v", false, "Version for get")
+
+	// Print "get v1.1.0" instead of cobra's default "get version v1.1.0".
+	cmd.SetVersionTemplate(`{{with .DisplayName}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 
 	return cmd
 }

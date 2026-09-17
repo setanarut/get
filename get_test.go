@@ -99,13 +99,37 @@ func copy(src, dest string) error {
 const version = "test_version"
 
 func TestShowhelp(t *testing.T) {
+	var buf bytes.Buffer
+	stdout = &buf
+	defer func() { stdout = io.Discard }()
+
 	for _, args := range [][]string{
 		{"get", "-h"},
 		{"get", "--help"},
 	} {
+		buf.Reset()
 		// -h/--help usage yazdırıp hatasız dönmeli;
 		// "URL is required at least one" hatası dönmemeli.
 		assert.NoError(t, New().Run(context.Background(), version, args))
+		// Help flag açıklaması büyük harfle başlamalı.
+		assert.Contains(t, buf.String(), "Help for get")
+	}
+}
+
+func TestShowVersion(t *testing.T) {
+	var buf bytes.Buffer
+	stdout = &buf
+	defer func() { stdout = io.Discard }()
+
+	for _, args := range [][]string{
+		{"get", "-v"},
+		{"get", "--version"},
+	} {
+		buf.Reset()
+		// "get test_version" yazdırmalı; cobra varsayılanı olan
+		// "get version test_version" çıktısı dönmemeli.
+		assert.NoError(t, New().Run(context.Background(), version, args))
+		assert.Equal(t, "get "+version+"\n", buf.String())
 	}
 }
 

@@ -99,23 +99,14 @@ func copy(src, dest string) error {
 const version = "test_version"
 
 func TestShowhelp(t *testing.T) {
-	args := []string{
-		"get",
-		"-h",
+	for _, args := range [][]string{
+		{"get", "-h"},
+		{"get", "--help"},
+	} {
+		// -h/--help usage yazdırıp hatasız dönmeli;
+		// "URL is required at least one" hatası dönmemeli.
+		assert.NoError(t, New().Run(context.Background(), version, args))
 	}
-
-	p := New()
-	_, err := p.parseOptions(args, version)
-	assert.NotNil(t, err)
-
-	args = []string{
-		"get",
-		"--help",
-	}
-
-	p = New()
-	_, err = p.parseOptions(args, version)
-	assert.NotNil(t, err)
 }
 
 func TestResumeDifferentProcs(t *testing.T) {

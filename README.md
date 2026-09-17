@@ -18,14 +18,19 @@ go install github.com/setanarut/get/cmd/get@latest
 ## Usage
 
 ```text
-Usage: get [options] URL
-  Options:
-  -h,  --help                   print usage and exit
-  -p,  --procs <num>            the number of connections for a single URL (default 1)
-  -o,  --output <filename>      output file to <filename>
-  -t,  --timeout <seconds>      timeout of checking request in seconds (default 10s)
-  -u,  --user-agent <agent>     identify as <agent>
-  -r,  --referer <referer>      identify as <referer>
+Get, file download client.
+
+Usage:
+  get [flags] URL...
+
+Flags:
+  -h, --help                help for get
+  -o, --output string       output file to <filename>
+  -p, --procs int           the number of connections for a single URL (default 1)
+  -r, --referer string      identify as <referer>
+  -t, --timeout int         timeout of checking request in seconds (default 10)
+  -u, --user-agent string   identify as <agent>
+  -v, --version             version for get
 ```
 
 ### Examples

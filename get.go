@@ -13,40 +13,108 @@ import (
 	"github.com/Songmu/prompter"
 	"github.com/asaskevich/govalidator"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
-// Get structs
+const (
+	warningNumConnection = 4
+	warningMessage       = "[WARNING] Using a large number of connections to 1 URL can lead to DOS attacks.\n" +
+		"In most cases, `4` or less is enough. In addition, the case is increasing that if you use multiple connections to 1 URL does not increase the download speed with the spread of CDNs.\n" +
+		"See: https://github.com/emaballarin/Get#disclaimer\n" +
+		"\n" +
+		"Would you execute knowing these?\n"
+
+	defaultTimeout = 10 // seconds
+)
+
+// Get struct
 type Get struct {
 	Output string
 	Procs  int
 	URLs   []string
 
-	args      []string
-	timeout   int
-	useragent string
-	referer   string
+	numConnection int
+	timeout       int
+	useragent     string
+	referer       string
 }
 
 // New for Get package
 func New() *Get {
 	return &Get{
 		Procs:   runtime.NumCPU(), // default
-		timeout: 10,
+		timeout: defaultTimeout,
 	}
 }
 
-// Run execute methods in Get package
-func (Get *Get) Run(ctx context.Context, version string, args []string) error {
-	if err := Get.Ready(version, args); err != nil {
-		return errTop(err)
+// Run parses the command line arguments with cobra and executes the download.
+// With -h / --help, cobra prints the usage and returns nil without running
+// the download, so no "URL is required at least one" error is returned.
+func (g *Get) Run(ctx context.Context, version string, args []string) error {
+	cmd := g.newCommand(ctx, version)
+	cmd.SetOut(stdout)
+	cmd.SetArgs(args)
+	return cmd.Execute()
+}
+
+// newCommand builds the cobra command and binds all flags to g.
+// cobra adds the -h/--help and -v/--version flags automatically.
+func (g *Get) newCommand(ctx context.Context, version string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get [flags] URL...",
+		Short: "Get, file download client",
+		Long: `Get, file download client.
+
+A multi-connection file downloader using parallel HTTP range requests.
+Downloads are resumable and multiple mirror URLs can be used at once.`,
+		Version: version,
+		Example: `  get -p 4 https://example.com/file.tar.gz
+  get -o ./downloads/file.tar.gz https://example.com/file.tar.gz
+  get -p 2 https://mirror-a.com/file.tar.gz https://mirror-b.com/file.tar.gz`,
+		Args: cobra.ArbitraryArgs,
+		// Do not print usage on errors; errors are printed by the caller.
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return g.run(ctx, version, args)
+		},
 	}
+
+	flags := cmd.Flags()
+	flags.IntVarP(&g.numConnection, "procs", "p", 1, "the number of connections for a single URL")
+	flags.StringVarP(&g.Output, "output", "o", "", "output file to <filename>")
+	flags.IntVarP(&g.timeout, "timeout", "t", defaultTimeout, "timeout of checking request in seconds")
+	flags.StringVarP(&g.useragent, "user-agent", "u", "", "identify as <agent>")
+	flags.StringVarP(&g.referer, "referer", "r", "", "identify as <referer>")
+
+	return cmd
+}
+
+// run is executed by cobra after flag parsing; it is never called when
+// only -h/--help (or -v/--version) is given.
+func (g *Get) run(ctx context.Context, version string, args []string) error {
+	if err := g.parseURLs(args); err != nil {
+		return err
+	}
+
+	// Same as the previous behavior: a non positive timeout falls back
+	// to the default instead of expiring instantly.
+	if g.timeout <= 0 {
+		g.timeout = defaultTimeout
+	}
+
+	if g.numConnection > warningNumConnection && !prompter.YN(warningMessage, false) {
+		return nil
+	}
+
+	g.Procs = g.numConnection * len(g.URLs)
 
 	// TODO(codehex): calc maxIdleConnsPerHost
 	client := newDownloadClient(16)
 
 	target, err := Check(ctx, &CheckConfig{
-		URLs:    Get.URLs,
-		Timeout: time.Duration(Get.timeout) * time.Second,
+		URLs:    g.URLs,
+		Timeout: time.Duration(g.timeout) * time.Second,
 		Client:  client,
 	})
 	if err != nil {
@@ -56,113 +124,46 @@ func (Get *Get) Run(ctx context.Context, version string, args []string) error {
 	filename := target.Filename
 
 	var dir string
-	if Get.Output != "" {
-		fi, err := os.Stat(Get.Output)
+	if g.Output != "" {
+		fi, err := os.Stat(g.Output)
 		if err == nil && fi.IsDir() {
-			dir = Get.Output
+			dir = g.Output
 		} else {
-			dir, filename = filepath.Split(Get.Output)
+			dir, filename = filepath.Split(g.Output)
 			if dir != "" {
 				if err := os.MkdirAll(dir, 0755); err != nil {
-					return errors.Wrapf(err, "failed to create diretory at %s", dir)
+					return errors.Wrapf(err, "failed to create directory at %s", dir)
 				}
 			}
 		}
 	}
 
 	opts := []DownloadOption{
-		WithUserAgent(Get.useragent, version),
-		WithReferer(Get.referer),
+		WithUserAgent(g.useragent, version),
+		WithReferer(g.referer),
 	}
 
 	return Download(ctx, &DownloadConfig{
 		Filename:      filename,
 		Dirname:       dir,
 		ContentLength: target.ContentLength,
-		Procs:         Get.Procs,
+		Procs:         g.Procs,
 		URLs:          target.URLs,
 		Client:        client,
 	}, opts...)
 }
 
-const (
-	warningNumConnection = 4
-	warningMessage       = "[WARNING] Using a large number of connections to 1 URL can lead to DOS attacks.\n" +
-		"In most cases, `4` or less is enough. In addition, the case is increasing that if you use multiple connections to 1 URL does not increase the download speed with the spread of CDNs.\n" +
-		"See: https://github.com/emaballarin/Get#disclaimer\n" +
-		"\n" +
-		"Would you execute knowing these?\n"
-)
-
-// Ready method define the variables required to Download.
-func (Get *Get) Ready(version string, args []string) error {
-	opts, err := Get.parseOptions(args, version)
-	if err != nil {
-		return errors.Wrap(errTop(err), "failed to parse command line args")
-	}
-
-	if opts.Timeout > 0 {
-		Get.timeout = opts.Timeout
-	}
-
-	if err := Get.parseURLs(); err != nil {
-		return errors.Wrap(err, "failed to parse of url")
-	}
-
-	if opts.NumConnection > warningNumConnection && !prompter.YN(warningMessage, false) {
-		return makeIgnoreErr()
-	}
-
-	Get.Procs = opts.NumConnection * len(Get.URLs)
-
-	if opts.Output != "" {
-		Get.Output = opts.Output
-	}
-
-	if opts.UserAgent != "" {
-		Get.useragent = opts.UserAgent
-	}
-
-	if opts.Referer != "" {
-		Get.referer = opts.Referer
-	}
-
-	return nil
-}
-
-func (Get *Get) parseOptions(argv []string, version string) (*Options, error) {
-	var opts Options
-
-	// Argüman yoksa: usage YAZDIRMA, sadece hatayı dön.
-	if len(argv) == 0 {
-		return nil, errors.New("URL is required at least one")
-	}
-
-	o, err := opts.parse(argv, version)
-	if err != nil {
-		return nil, err
-	}
-
-	// Sadece -h / --help verilmişse usage yazdır.
-	if opts.Help {
-		stdout.Write(opts.usage(version))
-		return nil, makeIgnoreErr()
-	}
-
-	Get.args = o
-
-	return &opts, nil
-}
-
-func (Get *Get) parseURLs() error {
+// parseURLs collects URLs from the positional arguments. If no URL is found
+// there, URLs are scanned from stdin (separated by spaces or newlines).
+func (g *Get) parseURLs(args []string) error {
 	// find url in args
-	for _, argv := range Get.args {
+	for _, argv := range args {
 		if govalidator.IsURL(argv) {
-			Get.URLs = append(Get.URLs, argv)
+			g.URLs = append(g.URLs, argv)
 		}
 	}
 
-	if len(Get.URLs) < 1 {
+	if len(g.URLs) < 1 {
 		fmt.Fprintf(stdout, "Please input url separate with space or newline\n")
 		fmt.Fprintf(stdout, "Start download with ^D\n")
 
@@ -173,7 +174,7 @@ func (Get *Get) parseURLs() error {
 			urls := strings.SplitSeq(scan, " ")
 			for url := range urls {
 				if govalidator.IsURL(url) {
-					Get.URLs = append(Get.URLs, url)
+					g.URLs = append(g.URLs, url)
 				}
 			}
 		}
@@ -182,7 +183,7 @@ func (Get *Get) parseURLs() error {
 			return errors.Wrap(err, "failed to parse url from stdin")
 		}
 
-		if len(Get.URLs) < 1 {
+		if len(g.URLs) < 1 {
 			return errors.New("urls not found in the arguments passed")
 		}
 	}

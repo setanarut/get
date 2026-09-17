@@ -81,11 +81,11 @@ Downloads are resumable and multiple mirror URLs can be used at once.`,
 	}
 
 	flags := cmd.Flags()
-	flags.IntVarP(&g.numConnection, "procs", "p", 1, "the number of connections for a single URL")
-	flags.StringVarP(&g.Output, "output", "o", "", "output file to <filename>")
-	flags.IntVarP(&g.timeout, "timeout", "t", defaultTimeout, "timeout of checking request in seconds")
-	flags.StringVarP(&g.useragent, "user-agent", "u", "", "identify as <agent>")
-	flags.StringVarP(&g.referer, "referer", "r", "", "identify as <referer>")
+	flags.IntVarP(&g.numConnection, "procs", "p", 1, "The number of connections for a single URL")
+	flags.StringVarP(&g.Output, "output", "o", "", "Output file to <filename>")
+	flags.IntVarP(&g.timeout, "timeout", "t", defaultTimeout, "Set timeout of checking request in seconds")
+	flags.StringVarP(&g.useragent, "user-agent", "u", "", "Identify as <agent>")
+	flags.StringVarP(&g.referer, "referer", "r", "", "Identify as <referer>")
 
 	return cmd
 }

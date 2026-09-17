@@ -3,7 +3,6 @@ package get
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -165,7 +164,9 @@ func (g *Get) run(ctx context.Context, version string, args []string) error {
 }
 
 // parseURLs collects URLs from the positional arguments. If no URL is found
-// there, URLs are scanned from stdin (separated by spaces or newlines).
+// there, URLs are scanned from stdin (separated by spaces or newlines) only
+// when stdin is piped. On an interactive terminal it returns an error right
+// away instead of blocking on input.
 func (g *Get) parseURLs(args []string) error {
 	// find url in args
 	for _, argv := range args {
@@ -175,10 +176,11 @@ func (g *Get) parseURLs(args []string) error {
 	}
 
 	if len(g.URLs) < 1 {
-		fmt.Fprintf(stdout, "Please input url separate with space or newline\n")
-		fmt.Fprintf(stdout, "Start download with ^D\n")
+		if fi, err := os.Stdin.Stat(); err != nil || fi.Mode()&os.ModeCharDevice != 0 {
+			return errors.New("url is required, at least one")
+		}
 
-		// scanning url from stdin
+		// scanning url from piped stdin
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			scan := scanner.Text()

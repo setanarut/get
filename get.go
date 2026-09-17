@@ -17,7 +17,6 @@ import (
 
 // Get structs
 type Get struct {
-	Trace  bool
 	Output string
 	Procs  int
 	URLs   []string
@@ -31,7 +30,6 @@ type Get struct {
 // New for Get package
 func New() *Get {
 	return &Get{
-		Trace:   false,
 		Procs:   runtime.NumCPU(), // default
 		timeout: 10,
 	}
@@ -103,10 +101,6 @@ func (Get *Get) Ready(version string, args []string) error {
 		return errors.Wrap(errTop(err), "failed to parse command line args")
 	}
 
-	if opts.Trace {
-		Get.Trace = opts.Trace
-	}
-
 	if opts.Timeout > 0 {
 		Get.timeout = opts.Timeout
 	}
@@ -138,28 +132,20 @@ func (Get *Get) Ready(version string, args []string) error {
 
 func (Get *Get) parseOptions(argv []string, version string) (*Options, error) {
 	var opts Options
+
+	// Argüman yoksa: usage YAZDIRMA, sadece hatayı dön.
 	if len(argv) == 0 {
-		stdout.Write(opts.usage(version))
-		return nil, makeIgnoreErr()
+		return nil, errors.New("URL is required at least one")
 	}
 
 	o, err := opts.parse(argv, version)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse command line options")
+		return nil, err
 	}
 
+	// Sadece -h / --help verilmişse usage yazdır.
 	if opts.Help {
 		stdout.Write(opts.usage(version))
-		return nil, makeIgnoreErr()
-	}
-
-	if opts.Update {
-		result, err := opts.isupdate(version)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse command line options")
-		}
-
-		stdout.Write(result)
 		return nil, makeIgnoreErr()
 	}
 
@@ -169,7 +155,6 @@ func (Get *Get) parseOptions(argv []string, version string) (*Options, error) {
 }
 
 func (Get *Get) parseURLs() error {
-
 	// find url in args
 	for _, argv := range Get.args {
 		if govalidator.IsURL(argv) {

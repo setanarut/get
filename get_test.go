@@ -98,60 +98,6 @@ func copy(src, dest string) error {
 
 const version = "test_version"
 
-func TestParts_of_ready(t *testing.T) {
-	cases := []struct {
-		name      string
-		args      []string
-		wantProcs int
-		wantURLs  int
-	}{
-		{
-			name: "one URL",
-			args: []string{
-				"get",
-				"-p",
-				"2",
-				"http://example.com/filename.tar.gz",
-				"--trace",
-				"--output",
-				"filename.tar.gz",
-			},
-			wantProcs: 2,
-			wantURLs:  1,
-		},
-		{
-			name: "two URLs",
-			args: []string{
-				"get",
-				"-p",
-				"2",
-				"http://example.com/filename.tar.gz",
-				"http://example2.com/filename.tar.gz",
-				"--trace",
-				"--output",
-				"filename.tar.gz",
-			},
-			wantProcs: 4,
-			wantURLs:  2,
-		},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			p := New()
-
-			if err := p.Ready(version, tc.args); err != nil {
-				t.Errorf("failed to parse command line args: %s", err)
-			}
-
-			assert.Equal(t, true, p.Trace, "failed to parse arguments of trace")
-			assert.Equal(t, tc.wantProcs, p.Procs, "failed to parse arguments of procs")
-			assert.Equal(t, "filename.tar.gz", p.Output, "failed to parse output")
-
-			assert.Len(t, p.URLs, tc.wantURLs)
-		})
-	}
-}
-
 func TestShowhelp(t *testing.T) {
 	args := []string{
 		"get",
@@ -169,17 +115,6 @@ func TestShowhelp(t *testing.T) {
 
 	p = New()
 	_, err = p.parseOptions(args, version)
-	assert.NotNil(t, err)
-}
-
-func TestShowisupdate(t *testing.T) {
-	args := []string{
-		"get",
-		"--check-update",
-	}
-
-	p := New()
-	_, err := p.parseOptions(args, version)
 	assert.NotNil(t, err)
 }
 

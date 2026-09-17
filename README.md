@@ -26,8 +26,6 @@ Usage: get [options] URL
   -t,  --timeout <seconds>      timeout of checking request in seconds (default 10s)
   -u,  --user-agent <agent>     identify as <agent>
   -r,  --referer <referer>      identify as <referer>
-  --check-update                check if there is update available
-  --trace                       display detail error messages
 ```
 
 ### Examples

@@ -3,7 +3,7 @@
 A multi-connection file downloader using parallel HTTP range requests.
 
 ```
-get -p 4 https://example.com/file.tar.gz
+get -p 4 https://example.com/file.zip
  ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  11% 1.79 MiB/s
 ```
 
@@ -25,19 +25,19 @@ go install github.com/setanarut/get/cmd/get@latest
 Download a file with 4 connections:
 
 ```sh
-get -p 4 https://example.com/file.tar.gz
+get -p 4 https://example.com/file.zip
 ```
 
 Save to a specific path:
 
 ```sh
-get -o ./downloads/file.tar.gz https://example.com/file.tar.gz
+get -o ./downloads/file.zip https://example.com/file.zip
 ```
 
 Download from multiple mirrors at the same time:
 
 ```sh
-get -p 2 https://mirror-a.com/file.tar.gz https://mirror-b.com/file.tar.gz
+get -p 2 https://mirror-a.com/file.zip https://mirror-b.com/file.zip
 ```
 
 URLs can also be passed through stdin, one per line.
@@ -49,10 +49,10 @@ chunks are stored in a `_<filename>.partial` directory next to the output
 file and reused on the next run.
 
 ```sh
-get https://example.com/file.tar.gz
+get https://example.com/file.zip
  ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  17% 1.77 MiB/s
  ^C
-get https://example.com/file.tar.gz
+get https://example.com/file.zip
  ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  21% 1.74 MiB/s
  ^C
 ```

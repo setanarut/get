@@ -19,7 +19,6 @@ const (
 	warningNumConnection = 4
 	warningMessage       = "[WARNING] Using a large number of connections to 1 URL can lead to DOS attacks.\n" +
 		"In most cases, `4` or less is enough. In addition, the case is increasing that if you use multiple connections to 1 URL does not increase the download speed with the spread of CDNs.\n" +
-		"See: https://github.com/emaballarin/Get#disclaimer\n" +
 		"\n" +
 		"Would you execute knowing these?\n"
 
@@ -70,9 +69,9 @@ func (g *Get) newCommand(ctx context.Context, version string) *cobra.Command {
 A multi-connection file downloader using parallel HTTP range requests.
 Downloads are resumable and multiple mirror URLs can be used at once.`,
 		Version: version,
-		Example: `  get -p 4 https://example.com/file.tar.gz
-  get -o ./downloads/file.tar.gz https://example.com/file.tar.gz
-  get -p 2 https://mirror-a.com/file.tar.gz https://mirror-b.com/file.tar.gz`,
+		Example: `  get -p 4 https://example.com/file.zip
+  get -o ./downloads/file.zip https://example.com/file.zip
+  get -p 2 https://mirror-a.com/file.zip https://mirror-b.com/file.zip`,
 		Args: cobra.ArbitraryArgs,
 		// Do not print usage on errors; errors are printed by the caller.
 		SilenceUsage:  true,

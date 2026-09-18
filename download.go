@@ -14,8 +14,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// ░█
-const progressBarTemplate = `{{bar . " " "█" "█" "░" " "}} {{percent . "%.0f%%" | cyan}} {{speed . "%s/s" "?/s" | yellow}}`
+const progressBarTemplate = `{{with string . "prefix"}}{{.}} {{end}}{{counters . }} {{bar . " " "█" "█" "░" " "}} {{percent . }} {{speed . }} {{rtime . "ETA %s"}}{{with string . "suffix"}} {{.}}{{end}}`
+
+// const progressBarTemplate = `{{bar . " " "█" "█" "░" " "}} {{percent . "%.0f%%" | cyan}} {{speed . "%s/s" "?/s" | yellow}}`
 
 type assignTasksConfig struct {
 	Procs         int
@@ -225,7 +226,6 @@ type parallelDownloadConfig struct {
 
 func parallelDownload(ctx context.Context, c *parallelDownloadConfig) error {
 	eg, ctx := errgroup.WithContext(ctx)
-
 	bar := pb.ProgressBarTemplate(progressBarTemplate).Start64(c.ContentLength).SetWriter(stdout).Set(pb.Bytes, true)
 	defer bar.Finish()
 

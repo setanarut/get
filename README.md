@@ -1,22 +1,31 @@
 # get
 
 A multi-connection file downloader using parallel HTTP range requests.
+Downloads are resumable and multiple mirror URLs can be used at once.
 
 ```
-get -p 4 https://example.com/file.zip
- ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  11% 1.79 MiB/s
+> get https://example.com/file.zip
+63.97 MiB / 231.82 MiB  █████████░░░░░░░░░░░░░░░░░░░░░░  27.59% 1.80 MiB p/s ETA 1m33s
 ```
 
-- Fast: downloads a file using multiple connections
-- Resumable: keeps downloaded chunks and continues where it left off
-- Mirror-aware: can download from multiple URLs at once
-- Cross-platform: builds on Windows, Linux and macOS
+```
+Usage:
+  get [flags] URL...
+Flags:
+  -h, --help                Help for get
+  -o, --output string       Output file to <filename>
+  -p, --procs int           The number of connections for a single URL (default 1)
+  -r, --referer string      Identify as <referer>
+  -t, --timeout int         Set timeout of checking request in seconds (default 10)
+  -u, --user-agent string   Identify as <agent>
+  -v, --version             Version for get
+```
 
 ## Install
 
 Build from source (requires Go 1.27.1+):
 
-```sh
+```
 go install github.com/setanarut/get/cmd/get@latest
 ```
 
@@ -24,19 +33,19 @@ go install github.com/setanarut/get/cmd/get@latest
 
 Download a file with 4 connections:
 
-```sh
+```
 get -p 4 https://example.com/file.zip
 ```
 
 Save to a specific path:
 
-```sh
+```
 get -o ./downloads/file.zip https://example.com/file.zip
 ```
 
 Download from multiple mirrors at the same time:
 
-```sh
+```
 get -p 2 https://mirror-a.com/file.zip https://mirror-b.com/file.zip
 ```
 
@@ -48,13 +57,13 @@ If a download is interrupted (`CTRL+C`), run the same command again. The downloa
 chunks are stored in a `_<filename>.partial` directory next to the output
 file and reused on the next run.
 
-```sh
-get https://example.com/file.zip
- ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  17% 1.77 MiB/s
- ^C
-get https://example.com/file.zip
- ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  21% 1.74 MiB/s
- ^C
+```
+> get https://example.com/file.zip
+73.17 MiB / 231.82 MiB  ████████████░░░░░░░░░░░░░░░░░░░░░░░  31.56% 1.78 MiB p/s ETA 1m28s
+^C
+> get https://example.com/file.zip
+94.28 MiB / 231.82 MiB  ███████████████░░░░░░░░░░░░░░░░░░░░  40.67% 1.76 MiB p/s ETA 1m17s
+^C
 ```
 
 Because chunks are stored by their byte offset, you can resume with a

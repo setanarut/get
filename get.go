@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Songmu/prompter"
-	"github.com/asaskevich/govalidator"
+	"github.com/asaskevich/govalidator/v12"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

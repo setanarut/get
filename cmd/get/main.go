@@ -8,7 +8,7 @@ import (
 	"github.com/setanarut/get"
 )
 
-var version = "v1.1.1"
+var version = "v1.1.3"
 
 func main() {
 	cli := get.New()
